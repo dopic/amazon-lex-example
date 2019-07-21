@@ -16,7 +16,7 @@ const createInvalidSlotResponse = (slots, slotToElicit, message) => {
     }
 };
 
-const createConfirmResponse = (slots, totalPrice) => {
+const createConfirmationResponse = (slots, totalPrice) => {
     return {
         sessionAttributes: {
             totalPrice
@@ -113,5 +113,5 @@ exports.handler = async (event) => {
 
     if (!slots.address) return createInvalidSlotResponse(slots, 'address', 'What is the delivery address?');
 
-    return createConfirmResponse(slots, flavourPrice + crustPrice);
+    return createConfirmationResponse(slots, flavourPrice + crustPrice);
 };
