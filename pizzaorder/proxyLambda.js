@@ -23,7 +23,7 @@ exports.handler = async (event) => {
         botName: 'PizzaBot',
         inputText: payload.message,
         userId: payload.userId,
-        sessionAttributes: {}
+        sessionAttributes: payload.sessionAttributes || {}
     };
 
     try {
