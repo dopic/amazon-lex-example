@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Ordering a Pizza With Lex
+
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  OrderAPizzaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: pizzaorder/
+      Handler: beginOrder.handler
+      Runtime: nodejs10.x
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref FlavoursTable
+
+  OrderAPizzaFulfilledFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: pizzaorder/
+      Handler: fulfillOrder.handler
+      Runtime: nodejs10.x
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref OrdersTable
+       
+  ProxyLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: pizzaorder/
+      Handler: proxyLambda.handler
+      Runtime: nodejs10.x
+      Policies:
+         - Version: '2012-10-17'
+           Statement:
+            - Effect: Allow
+              Action:
+                - lex:PostText
+              Resource: "arn:aws:lex:*:*:bot:PizzaBot:*"
+      Events:
+        Get:
+          Type: 'Api'
+          Properties:
+            Path: '/'
+            Method: 'post'
+
+  FlavoursTable:
+    Type: AWS::DynamoDB::Table    
+    Properties:
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      AttributeDefinitions:
+        -
+          AttributeName: "type"
+          AttributeType: "S"
+        -
+          AttributeName: "flavour"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "type"
+          KeyType: "HASH"
+        -
+          AttributeName: "flavour"
+          KeyType: "RANGE"
+      TableName: PizzaFlavours
+
+  OrdersTable:
+    Type: AWS::DynamoDB::Table    
+    Properties:
+      ProvisionedThroughput:
+        ReadCapacityUnits: 1
+        WriteCapacityUnits: 1
+      AttributeDefinitions:
+        -
+          AttributeName: "orderId"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "orderId"
+          KeyType: "HASH"       
+      TableName: PizzaOrders
+
+Outputs:
+  APIEndpoint:
+    Description: API Gateway Endpoint
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+    Export: 
+      Name: PizzaBotAPIEndpoint
